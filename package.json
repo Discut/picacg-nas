@@ -1,0 +1,24 @@
+{
+  "name": "picacg-nas",
+  "version": "1.0.0",
+  "description": "部署在nas上，用于自动下载漫画。",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Discut/picacg-nas.git"
+  },
+  "author": "discut",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Discut/picacg-nas/issues"
+  },
+  "homepage": "https://github.com/Discut/picacg-nas#readme",
+  "dependencies": {
+    "@l2studio/picacomic-api": "^0.1.13",
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6"
+  }
+}
