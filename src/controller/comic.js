@@ -1,14 +1,21 @@
 const apiConfig = require('../configuration/ApiConfig');
+const ComicService = require('../service/comicService');
 module.exports = (_app) => {
+    /**
+     * 同步漫画
+     * @author dicut
+     * 
+     */
+    _app.get(apiConfig.BaseUrl + '/comic/sync', (req, res) => {
+        new ComicService().SynchronizeComic((response) => {
+            res.send(response);
+        });
+    })
 
     /**
      * 获取漫画列表
      */
     _app.get(apiConfig.BaseUrl + '/comic/list', (req, res) => {
-        // res.send({
-        //     code: 200,
-        //     data: [{ name: 1 }, { name: 2 }, { name: 3 }]
-        // })
         const newList = req.body
         res.send({ newList })
     })
