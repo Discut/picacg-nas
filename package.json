@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/Discut/picacg-nas#readme",
   "dependencies": {
-    "@l2studio/picacomic-api": "^0.2.0",
+    "@l2studio/picacomic-api": "^0.1.13",
     "express": "^4.18.2",
     "sqlite3": "^5.1.6"
   }
