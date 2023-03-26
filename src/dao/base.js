@@ -7,15 +7,15 @@ module.exports = class DaoBase {
     _databasePath = '';
     _exist = false;
     _db = null;
-    constructor() {
-        this.checkDatabase(DATABASE_NAME)
+    constructor(databaseName) {
+        this.checkDatabase(databaseName || DATABASE_NAME)
     }
     checkDatabase(name) {
-        this._databasePath = path.join(process.cwd(), '/db', name);
+        this._databasePath = path.join(process.cwd(), 'db', name);
         // 判断数据库文件是否存在
         this._exist = fs.existsSync(this._databasePath);
-        if (!fs.existsSync(path.join(process.cwd(), '/db'))) {
-            fs.mkdirSync(path.join(process.cwd(), '/db'));
+        if (!fs.existsSync(path.join(process.cwd(), 'db'))) {
+            fs.mkdirSync(path.join(process.cwd(), 'db'));
         }
         if (!this._exist) {
             fs.openSync(this._databasePath, 'w');
@@ -28,7 +28,6 @@ module.exports = class DaoBase {
         return new Promise(() => {
             const _db = this._db.all("SELECT COUNT(*) FROM sqlite_master where type ='table' and name ='" + tableName + "'", function (err, rows) {
                 if (rows[0]['COUNT(*)'] == 0) {
-                    // db.run('CREATE TABLE ' + COMIC_COLLECTION_TABLE_NAME + ' (id INTEGER PRIMARY KEY, name TEXT, email TEXT)');
                     _db.run(sql);
                 }
             });

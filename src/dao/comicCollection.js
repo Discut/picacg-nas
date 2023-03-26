@@ -1,4 +1,4 @@
-const { COMIC_COLLECTION_DATABASE_NAME, COMIC_COLLECTION_TABLE_NAME } = require('../configuration/dbConfig');
+const { COMIC_COLLECTION_TABLE_NAME } = require('../configuration/dbConfig');
 const DaoBase = require('./base');
 
 
@@ -34,7 +34,6 @@ module.exports = class ComicCollectionDao extends DaoBase {
      */
     insert(comic) {
         return new Promise((resolve, reject) => {
-            console.log([comic])
             comic = {
                 $id: comic.id,
                 $epsCount: comic.epsCount,
@@ -46,11 +45,17 @@ module.exports = class ComicCollectionDao extends DaoBase {
                 $title2: comic.title2,
                 $author: comic.author,
                 $chineseTeam: comic.chineseTeam,
-                $categories: comic.categories,
-                $tags: comic.tags,
+                $categories: JSON.stringify(comic.categories),
+                $tags: JSON.stringify(comic.tags),
                 $description: comic.description
             }
             this._db.all("insert into " + COMIC_COLLECTION_TABLE_NAME + "(id,'epsCount',pages,path,'fileServer',creator,title,title2,author,'chineseTeam',categories,tags,description)values($id,$epsCount,$pages,$path,$fileServer,$creator,$title,$title2,$author,$chineseTeam,$categories,$tags,$description)", comic);
+        });
+    }
+
+    delete(id) {
+        return new Promise((resolve, reject) => {
+            this._db.all('DELETE FROM ' + COMIC_COLLECTION_TABLE_NAME + ' WHERE id=?', [id]);
         });
     }
 
@@ -67,9 +72,9 @@ module.exports = class ComicCollectionDao extends DaoBase {
         });
     }
 
-    
-    query(id) {
 
+    query(id) {
+        
     }
 
 }
