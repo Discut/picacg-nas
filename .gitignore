@@ -105,3 +105,10 @@ dist
 
 # 忽略数据库文件
 /db
+
+# 忽略文档
+/doc
+
+/download
+
+.vscode
