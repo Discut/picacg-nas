@@ -7,6 +7,8 @@ const { mkdir } = require("../util/dir");
 const { resolve } = require("path");
 const { getFileBuffer } = require("../util/file");
 const { Duplex } = require("stream");
+const { PicaComicService } = require("@l2studio/picacomic-api");
+const EpisodeDao = require("../dao/episode");
 
 module.exports = class ComicService {
 
@@ -37,7 +39,23 @@ module.exports = class ComicService {
         })
 
     }
-    SynchronizeComic(callback) {
+
+    /**
+     * 从云端同步漫画章节信息至本地
+     * @param {Comic[]} comics 漫画数组
+     */
+    async synchronousEpisodeInfo(comics) {
+        const service = await getPicacgService();
+        for (let index = 0; index < comics.length; index++) {
+            console.log(comics[index])
+            const el = comics[index];
+            // 获取到的数据顺序是反的 需要反转
+            const episodes = (await this._getAllEpisodes(service, el.id, 1)).reverse();
+            await this._saveEpisodes(el.id, episodes);
+        }
+    }
+
+    synchronizeComic(callback) {
         getPicacgService().then(service => {
             this._getAllFavourites(service, []).then(comics => {
                 const comicCollection = new ComicCollectionDao();
@@ -165,6 +183,47 @@ module.exports = class ComicService {
                 console.error(err);
             });
         });
+    }
+
+    /**
+     * 获取漫画的所有章节
+     * @param {PicacgService} service 
+     * @param {string} id 漫画id
+     * @param {number} index 章节分页，默认从1开始
+     * @returns 
+     */
+    async _getAllEpisodes(service, id, index = 1) {
+        const data = await service.fetchComicEpisodes({
+            comicId: id,
+            page: index
+        });
+        let curEpisodes = data.docs;
+        if (data.page != data.pages) {
+            const nextEpisodes = await this._getAllEpisodes(service, id, index + 1);
+            curEpisodes = [...curEpisodes, ...nextEpisodes]
+        }
+        return curEpisodes;
+    }
+
+    /**
+     * 保存漫画章节信息至数据库
+     * @param {string} bookId 
+     * @param {Episode[]} episodes 章节数组
+     */
+    async _saveEpisodes(bookId, episodes) {
+        const dao = new EpisodeDao();
+        const dbData = await dao.queryByBookId(bookId);
+        // 查找存在于账号云端，不存在本地数据库中的漫画分话
+        let different = episodes.filter(item => !dbData.some(element => element.epsId === item.id));
+        for (let index = 0; index < different.length; index++) {
+            const episode = different[index];
+            dao.insert({
+                id: bookId,
+                epsId: episode.id,
+                epsTitle: episode.title,
+                epsOrder: episode.order
+            });
+        }
     }
 
     // 保存封面
