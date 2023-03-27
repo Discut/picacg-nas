@@ -4,12 +4,37 @@ const { getPicacgService } = require("../picacg/picacgServiceFactory")
 const path = require('path')
 const fs = require('fs');
 const { mkdir } = require("../util/dir");
+const { resolve } = require("path");
+const { getFileBuffer } = require("../util/file");
+const { Duplex } = require("stream");
 
 module.exports = class ComicService {
+
     constructor() {
 
     }
-    getComicInfo(callback) {
+    /**
+     * 获取收藏的漫画
+     * @param {number} pagesIndex 
+     * @param {Function} callback 
+     * @returns Promis
+     */
+    getComicsInfo(pagesIndex, callback) {
+        const pageSize = 10;
+        const dao = new ComicCollectionDao();
+        dao.queryAll().then(rows => {
+            let result = {
+                code: 200,
+                msg: '获取成功',
+                data: {
+                    comics: rows.slice(pagesIndex * pageSize, (pagesIndex + 1) * pageSize),
+                    pageSize: pageSize,
+                    pageCount: Math.ceil(rows.length / pageSize) - 1, // + (rows.length % pageSize == 0 ? 0 : 1),
+                    page: Number(pagesIndex)
+                }
+            };
+            callback(result);
+        })
 
     }
     SynchronizeComic(callback) {
@@ -47,6 +72,34 @@ module.exports = class ComicService {
         }).catch(err => {
             console.error(err);
         })
+    }
+
+    /**
+     * 获取封面buffer
+     * @param {string} id 
+     * @param {Function} callback 回调
+     */
+    getCoverBuffer(id, callback) {
+        const dao = new ComicCollectionDao();
+        dao.query(id).then(rows => {
+            // 本地路径
+            const coverPath = path.join(DOWNLOAD_DIR, rows[0].id, 'cover.jpg');
+            if (fs.existsSync(coverPath))
+                // 存在直接读取
+                getFileBuffer(coverPath, buffer => {
+                    callback(buffer);
+                });
+            else// 不存在从云端获取再读取返回
+                this._saveCover(rows[0], () => {
+                    getFileBuffer(coverPath, buffer => {
+                        callback(buffer);
+                    })
+                }, () => {
+                    callback(null)
+                })
+        }).catch(err => {
+            callback(null);
+        });
     }
 
     /**
@@ -129,8 +182,10 @@ module.exports = class ComicService {
     /**
      * 获取漫画图片并保存
      * @param {Comic} comic 
+     * @param {Function} success 成功的回调函数
+     * @param {Function} fail 失败的回调函数
      */
-    _saveCover(comic) {
+    _saveCover(comic, success, fail) {
         getPicacgService().then(server => {
             server.fetchImage({
                 path: comic.path || comic.thumb.path,
@@ -140,7 +195,11 @@ module.exports = class ComicService {
                 let fd = fs.openSync(path.join(DOWNLOAD_DIR, comic.id, 'cover.jpg'), 'w')
                 let ws = fs.createWriteStream(path.join(DOWNLOAD_DIR, comic.id, 'cover.jpg'));
                 image.pipe(ws);
+                // 监听管道是否关闭，当关闭时才完成传输
+                image.on('end', () => success());
                 fs.close(fd);
+            }).catch(err => {
+                fail(err);
             })
         });
     }
