@@ -74,7 +74,14 @@ module.exports = class ComicCollectionDao extends DaoBase {
 
 
     query(id) {
-        
+        return new Promise((resolve, reject) => {
+            this._db.all('SELECT * FROM ' + COMIC_COLLECTION_TABLE_NAME + ' WHERE id=?', [id], function (err, rows) {
+                if (rows)
+                    resolve(rows);
+                else
+                    reject();
+            })
+        })
     }
 
 }
